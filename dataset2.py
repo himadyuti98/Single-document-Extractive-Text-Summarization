@@ -6,6 +6,10 @@ import json
 import pickle
 from pytorch_pretrained_bert import BertTokenizer, BertModel
 
+def pad_tensor(vec, pad, dim):
+    pad_size = list(vec.shape)
+    pad_size[dim] = pad - vec.size(dim)
+    return torch.cat([vec, torch.zeros(*pad_size)], dim=dim)	
 
 class SentenceDataset(Dataset):
 	def __init__(self, load=False, test=False):
@@ -194,4 +198,5 @@ class SentenceDataset(Dataset):
 
 
 if __name__ == '__main__':
-	SentenceDataset(True)
+	SentenceDataset(load=True, test=False)
+	SentenceDataset(load=True, test=True)
