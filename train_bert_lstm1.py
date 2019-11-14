@@ -12,8 +12,8 @@ from torch.utils.data import DataLoader
 from models import *
 from dataset import *
 
-parser = argparse.ArgumentParser(description='Experiment 1')
-parser.add_argument('--lr', default=1e-3, type=float, help='learning rate') 
+parser = argparse.ArgumentParser(description='Experiment 1 Bert Embeddings')
+parser.add_argument('--lr', default=1e-4, type=float, help='learning rate') 
 parser.add_argument('--batch_size', default=16, type=int) 
 parser.add_argument('--epochs', '-e', type=int, default=200, help='Number of epochs to train.')
 parser.add_argument('--preparedata', type=int, default=1)
@@ -29,7 +29,7 @@ criterion = nn.CrossEntropyLoss()
 print('==> Creating networks..')
 lstm = LSTM1().to(device)
 params = lstm.parameters()
-optimizer = optim.Adam(params, lr=args.lr)
+optimizer = optim.Adam(params, lr=args.lr, weight_decay=1e-5)
 
 print('==> Loading data..')
 trainset = SentenceDataset()
@@ -58,10 +58,10 @@ def train_lstm1(currepoch, epoch):
         total += label.size(0)
         correct += predicted.eq(label).sum().item()
 
-        with open("./logs/lstm1_train_loss.log", "a+") as lfile:
+        with open("./logs/bertlstm1_train_loss.log", "a+") as lfile:
             lfile.write("{}\n".format(train_loss / total))
 
-        with open("./logs/lstm1_train_acc.log", "a+") as afile:
+        with open("./logs/bertlstm1_train_acc.log", "a+") as afile:
             afile.write("{}\n".format(correct / total))
 
         del premise
@@ -69,12 +69,13 @@ def train_lstm1(currepoch, epoch):
         del label
         gc.collect()
         torch.cuda.empty_cache()
-        torch.save(lstm.state_dict(), './weights/networklstm_train.ckpt')
-        with open("./information/lstm1_info.txt", "w+") as f:
+        torch.save(lstm.state_dict(), './weights/networkbertlstm1_train.ckpt')
+        with open("./information/bertlstm1_info.txt", "w+") as f:
             f.write("{} {}".format(currepoch, batch_idx))
         print('Batch: [%d/%d], Loss: %.3f, Train Loss: %.3f , Acc: %.3f%% (%d/%d)' % (batch_idx, len(dataloader), loss.item(), train_loss/(batch_idx+1), 100.0*correct/total, correct, total), end='\r')
 
-    torch.save(lstm.state_dict(), './checkpoints/networklstm_train_epoch_{}.ckpt'.format(currepoch + 1))
+    if(currepoch + 1 % 10 == 0):
+        torch.save(lstm.state_dict(), './checkpoints/networkbertlstm1_train_epoch_{}.ckpt'.format(currepoch + 1))
     print('\n=> Classifier Network : Epoch [{}/{}], Loss:{:.4f}'.format(currepoch+1, epoch, train_loss / len(dataloader)))
 
 def test_lstm1(currepoch, epoch):
@@ -97,10 +98,10 @@ def test_lstm1(currepoch, epoch):
         total += label.size(0)
         correct += predicted.eq(label).sum().item()
 
-        with open("./logs/indiclstm_test_loss.log", "a+") as lfile:
+        with open("./logs/bertlstm1_test_loss.log", "a+") as lfile:
             lfile.write("{}\n".format(test_loss / total))
 
-        with open("./logs/indiclstm_test_acc.log", "a+") as afile:
+        with open("./logs/bertlstm1_test_acc.log", "a+") as afile:
             afile.write("{}\n".format(correct / total))
 
         del premise
