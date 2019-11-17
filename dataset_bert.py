@@ -18,11 +18,6 @@ class SentenceDataset(Dataset):
 		use_cuda = torch.cuda.is_available()
 		device = torch.device('cuda:0' if use_cuda else 'cpu')
 
-
-		bert_model = BertModel.from_pretrained('bert-base-uncased')
-		bert_model = bert_model.cuda()
-		tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
 		self.premise = []
 		self.hypothesis = []
 		self.label = []
@@ -41,6 +36,10 @@ class SentenceDataset(Dataset):
 
 
 		if(load):
+			bert_model = BertModel.from_pretrained('bert-base-uncased')
+			bert_model = bert_model.cuda()
+			tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
 			traindata = './data/snli_1.0/snli_1.0/snli_1.0_train.jsonl'
 			testdata = './data/snli_1.0/snli_1.0/snli_1.0_test.jsonl'
 
@@ -83,8 +82,11 @@ class SentenceDataset(Dataset):
 
 				temp = self.premise
 				self.premise = []
+				i=0
 				for text in temp:
-					print(text, "PREM")
+					if(i%1000==0):
+						print(text, "PREM")
+					i = i+1
 					marked_text = "[CLS] " + text + " [SEP]"
 					tokenized_text = tokenizer.tokenize(marked_text)
 					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
@@ -96,12 +98,17 @@ class SentenceDataset(Dataset):
 						encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
 						embedding = encoded_layers[11][0]
 						self.premise.append(np.array(embedding.cpu()))
+						if(i%1000==0):
+							print(np.array(embedding.cpu()).shape)
 
 
 				temp = self.hypothesis
 				self.hypothesis = []
+				i=0
 				for text in temp:
-					print(text, "HYP")
+					if(i%1000==0):
+						print(text, "HYP")
+					i = i+1
 					marked_text = "[CLS] " + text + " [SEP]"
 					tokenized_text = tokenizer.tokenize(marked_text)
 					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
@@ -113,9 +120,14 @@ class SentenceDataset(Dataset):
 						encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
 						embedding = encoded_layers[11][0]
 						self.hypothesis.append(np.array(embedding.cpu()))
+						if(i%1000==0):
+							print(np.array(embedding.cpu()).shape)
 
 				file = open('./pickle/sentences_train.dat', 'wb+')
 				pickle.dump((self.premise, self.hypothesis, self.label), file)
+				file.close()
+				file = open('./pickle/maxlen_train.dat', 'wb+')
+				pickle.dump((self.max_len), file)
 				file.close()
 				print("done on training data")
 			else:
@@ -143,8 +155,11 @@ class SentenceDataset(Dataset):
 
 				temp = self.premise_test
 				self.premise_test = []
+				i = 0
 				for text in temp:
-					print(text, "PREM")
+					if(i%1000==0):
+						print(text, "PREM")
+					i = i+1
 					marked_text = "[CLS] " + text + " [SEP]"
 					tokenized_text = tokenizer.tokenize(marked_text)
 					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
@@ -156,11 +171,16 @@ class SentenceDataset(Dataset):
 						encoded_layers, _ = bert_model(ttokens_tensor.to(device), segments_tensors.to(device))
 						embedding = encoded_layers[11][0]
 						self.premise_test.append(np.array(embedding.cpu()))
+						if(i%1000==0):
+							print(np.array(embedding.cpu()).shape)
 
 				temp = self.hypothesis_test
 				self.hypothesis_test = []
+				i = 0
 				for text in temp:
-					print(text, "HYP")
+					if(i%1000==0):
+						print(text, "HYP")
+					i = i+1
 					marked_text = "[CLS] " + text + " [SEP]"
 					tokenized_text = tokenizer.tokenize(marked_text)
 					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
@@ -172,28 +192,42 @@ class SentenceDataset(Dataset):
 						encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
 						embedding = encoded_layers[11][0]
 						self.hypothesis_test.append(np.array(embedding.cpu()))
+						if(i%1000==0):
+							print(np.array(embedding.cpu()).shape)
 
 				file = open('./pickle/sentences_test.dat', 'wb+')
 				pickle.dump((self.premise_test, self.hypothesis_test, self.label_test), file)
 				file.close()
+				file = open('./pickle/maxlen_test.dat', 'wb+')
+				pickle.dump((self.max_len), file)
+				file.close()
+
 				print("done on test data")
 		
 		else:
+			file = open('./pickle/maxlen_train.dat', 'rb+')
+			maxlen_train = pickle.load(file)
+			file.close()
+			file = open('./pickle/maxlen_test.dat', 'rb+')
+			maxlen_test = pickle.load(file)
+			file.close()
+			self.max_len = max(maxlen_train, maxlen_test) + 1
 			if(self.test):
 				file = open('./pickle/sentences_test.dat', 'rb+')
-				pickle.load((self.premise_test, self.hypothesis_test, self.label_test), file)
+				self.premise_test, self.hypothesis_test, self.label_test = pickle.load(file)
 				file.close()
 			else:
 				file = open('./pickle/sentences_train.dat', 'rb+')
-				pickle.load((self.premise, self.hypothesis, self.label), file)
+				self.premise, self.hypothesis, self.label = pickle.load(file)
 				file.close()	
 
 	def __len__(self):
 		return len(self.premise)
 
 	def __getitem__(self, idx):	
-		premise, hypothesis, label = torch.tensor(self.premise[idx]).type(torch.FloatTensor), torch.tensor(self.hypothesis[idx]).type(torch.FloatTensor), torch.tensor(self.label[idx]).type(torch.LongTensor)
-		if(self.test):
+		if(not self.test):
+			premise, hypothesis, label = torch.tensor(self.premise[idx]).type(torch.FloatTensor), torch.tensor(self.hypothesis[idx]).type(torch.FloatTensor), torch.tensor(self.label[idx]).type(torch.LongTensor)
+		else:
 			premise, hypothesis, label = torch.tensor(self.premise_test[idx]).type(torch.FloatTensor), torch.tensor(self.hypothesis_test[idx]).type(torch.FloatTensor), torch.tensor(self.label_test[idx]).type(torch.LongTensor)
 		premise = pad_tensor(premise, self.max_len, 0)
 		hypothesis = pad_tensor(hypothesis, self.max_len, 0)
