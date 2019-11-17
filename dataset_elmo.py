@@ -18,7 +18,7 @@ class SentenceDatasetElmo(Dataset):
 		use_cuda = torch.cuda.is_available()
 		device = torch.device('cuda:0' if use_cuda else 'cpu')
 
-		elmo = ElmoEmbedder() 
+		elmo = ElmoEmbedder(cuda_device=0) 
 
 
 		self.premise = []
@@ -39,12 +39,14 @@ class SentenceDatasetElmo(Dataset):
 
 
 		if(load):
-			traindata = '../snli_1.0/snli_1.0/snli_1.0_train.jsonl'
-			testdata = '../snli_1.0/snli_1.0/snli_1.0_test.jsonl'
+			traindata = './data/snli_1.0/snli_1.0/snli_1.0_train.jsonl'
+			testdata = './data/snli_1.0/snli_1.0/snli_1.0_test.jsonl'
 
 			if(test==False):
 				with open(traindata, "r") as f:
+					i = 0
 					for line in f:
+						i = i+1
 						jsondata = json.loads(line)
 
 						labl = jsondata["gold_label"]
@@ -66,15 +68,19 @@ class SentenceDatasetElmo(Dataset):
 							self.max_len = len(sentence)
 						embedding = elmo.embed_sentence(sentence)
 						self.hypothesis.append(np.array(embedding[2]))
+						if(i%1000==0):
+							print(i)
 				
-				file = open('../pickle/sentences_elmo_train.dat', 'wb+')
+				file = open('./pickle/sentences_elmo_train.dat', 'wb+')
 				pickle.dump((self.premise, self.hypothesis, self.label), file)
 				file.close()
 				print("done on training data")
 
 			else:
 				with open(testdata, "r") as f:
+					i = 0
 					for line in f:
+						i = i+1
 						jsondata = json.loads(line)
 
 						labl = jsondata["gold_label"]
@@ -96,20 +102,22 @@ class SentenceDatasetElmo(Dataset):
 							self.max_len = len(sentence)
 						embedding = elmo.embed_sentence(sentence)
 						self.hypothesis_test.append(np.array(embedding[2]))
+						if(i%1000==0):
+							print(i)
 
 				
-				file = open('../pickle/sentences_elmo_test.dat', 'wb+')
+				file = open('./pickle/sentences_elmo_test.dat', 'wb+')
 				pickle.dump((self.premise_test, self.hypothesis_test, self.label_test), file)
 				file.close()
 				print("done on test data")
 		
 		else:
 			if(self.test):
-				file = open('../pickle/sentences_elmo_test.dat', 'rb+')
+				file = open('./pickle/sentences_elmo_test.dat', 'rb+')
 				pickle.load((self.premise_test, self.hypothesis_test, self.label_test), file)
 				file.close()
 			else:
-				file = open('../pickle/sentences_elmo_train.dat', 'rb+')
+				file = open('./pickle/sentences_elmo_train.dat', 'rb+')
 				pickle.load((self.premise, self.hypothesis, self.label), file)
 				file.close()	
 

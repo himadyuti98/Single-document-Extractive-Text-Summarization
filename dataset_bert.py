@@ -41,8 +41,8 @@ class SentenceDataset(Dataset):
 
 
 		if(load):
-			traindata = '../snli_1.0/snli_1.0/snli_1.0_train.jsonl'
-			testdata = '../snli_1.0/snli_1.0/snli_1.0_test.jsonl'
+			traindata = './data/snli_1.0/snli_1.0/snli_1.0_train.jsonl'
+			testdata = './data/snli_1.0/snli_1.0/snli_1.0_test.jsonl'
 
 			if(test==False):
 				with open(traindata, "r") as f:
@@ -84,6 +84,7 @@ class SentenceDataset(Dataset):
 				temp = self.premise
 				self.premise = []
 				for text in temp:
+					print(text, "PREM")
 					marked_text = "[CLS] " + text + " [SEP]"
 					tokenized_text = tokenizer.tokenize(marked_text)
 					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
@@ -100,6 +101,7 @@ class SentenceDataset(Dataset):
 				temp = self.hypothesis
 				self.hypothesis = []
 				for text in temp:
+					print(text, "HYP")
 					marked_text = "[CLS] " + text + " [SEP]"
 					tokenized_text = tokenizer.tokenize(marked_text)
 					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
@@ -112,7 +114,7 @@ class SentenceDataset(Dataset):
 						embedding = encoded_layers[11][0]
 						self.hypothesis.append(np.array(embedding.cpu()))
 
-				file = open('../pickle/sentences_train.dat', 'wb+')
+				file = open('./pickle/sentences_train.dat', 'wb+')
 				pickle.dump((self.premise, self.hypothesis, self.label), file)
 				file.close()
 				print("done on training data")
@@ -142,6 +144,7 @@ class SentenceDataset(Dataset):
 				temp = self.premise_test
 				self.premise_test = []
 				for text in temp:
+					print(text, "PREM")
 					marked_text = "[CLS] " + text + " [SEP]"
 					tokenized_text = tokenizer.tokenize(marked_text)
 					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
@@ -157,6 +160,7 @@ class SentenceDataset(Dataset):
 				temp = self.hypothesis_test
 				self.hypothesis_test = []
 				for text in temp:
+					print(text, "HYP")
 					marked_text = "[CLS] " + text + " [SEP]"
 					tokenized_text = tokenizer.tokenize(marked_text)
 					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
@@ -169,18 +173,18 @@ class SentenceDataset(Dataset):
 						embedding = encoded_layers[11][0]
 						self.hypothesis_test.append(np.array(embedding.cpu()))
 
-				file = open('../pickle/sentences_test.dat', 'wb+')
+				file = open('./pickle/sentences_test.dat', 'wb+')
 				pickle.dump((self.premise_test, self.hypothesis_test, self.label_test), file)
 				file.close()
 				print("done on test data")
 		
 		else:
 			if(self.test):
-				file = open('../pickle/sentences_test.dat', 'rb+')
+				file = open('./pickle/sentences_test.dat', 'rb+')
 				pickle.load((self.premise_test, self.hypothesis_test, self.label_test), file)
 				file.close()
 			else:
-				file = open('../pickle/sentences_train.dat', 'rb+')
+				file = open('./pickle/sentences_train.dat', 'rb+')
 				pickle.load((self.premise, self.hypothesis, self.label), file)
 				file.close()	
 
