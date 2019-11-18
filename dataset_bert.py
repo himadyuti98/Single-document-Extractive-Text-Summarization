@@ -6,6 +6,13 @@ import json
 import pickle
 from pytorch_pretrained_bert import BertTokenizer, BertModel
 
+bert_model = BertModel.from_pretrained('bert-base-uncased')
+bert_model = bert_model.cuda()
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+use_cuda = torch.cuda.is_available()
+device = torch.device('cuda:0' if use_cuda else 'cpu')
+
 def pad_tensor(vec, pad, dim):
     pad_size = list(vec.shape)
     pad_size[dim] = pad - vec.size(dim)
@@ -14,9 +21,6 @@ def pad_tensor(vec, pad, dim):
 class SentenceDataset(Dataset):
 	def __init__(self, load=False, test=False):
 		super(SentenceDataset, self).__init__()
-
-		use_cuda = torch.cuda.is_available()
-		device = torch.device('cuda:0' if use_cuda else 'cpu')
 
 		self.premise = []
 		self.hypothesis = []
@@ -36,9 +40,6 @@ class SentenceDataset(Dataset):
 
 
 		if(load):
-			bert_model = BertModel.from_pretrained('bert-base-uncased')
-			bert_model = bert_model.cuda()
-			tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 			traindata = './data/snli_1.0/snli_1.0/snli_1.0_train.jsonl'
 			testdata = './data/snli_1.0/snli_1.0/snli_1.0_test.jsonl'
@@ -80,48 +81,48 @@ class SentenceDataset(Dataset):
 				# 		print(len(embedding[0]))
 				# 		self.premise.append(np.array(embedding))
 
-				temp = self.premise
-				self.premise = []
-				i=0
-				for text in temp:
-					if(i%1000==0):
-						print(text, "PREM")
-					i = i+1
-					marked_text = "[CLS] " + text + " [SEP]"
-					tokenized_text = tokenizer.tokenize(marked_text)
-					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-					segments_ids = [1] * len(tokenized_text)
-					tokens_tensor = torch.tensor([indexed_tokens])
-					segments_tensors = torch.tensor([segments_ids])
-					bert_model.eval()
-					with torch.no_grad():
-						encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
-						embedding = encoded_layers[11][0]
-						self.premise.append(np.array(embedding.cpu()))
-						if(i%1000==0):
-							print(np.array(embedding.cpu()).shape)
+				# temp = self.premise
+				# self.premise = []
+				# i=0
+				# for text in temp:
+				# 	if(i%1000==0):
+				# 		print(text, "PREM")
+				# 	i = i+1
+				# 	marked_text = "[CLS] " + text + " [SEP]"
+				# 	tokenized_text = tokenizer.tokenize(marked_text)
+				# 	indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+				# 	segments_ids = [1] * len(tokenized_text)
+				# 	tokens_tensor = torch.tensor([indexed_tokens])
+				# 	segments_tensors = torch.tensor([segments_ids])
+				# 	bert_model.eval()
+				# 	with torch.no_grad():
+				# 		encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
+				# 		embedding = encoded_layers[11][0]
+				# 		self.premise.append(np.array(embedding.cpu()))
+				# 		if(i%1000==0):
+				# 			print(np.array(embedding.cpu()).shape)
 
 
-				temp = self.hypothesis
-				self.hypothesis = []
-				i=0
-				for text in temp:
-					if(i%1000==0):
-						print(text, "HYP")
-					i = i+1
-					marked_text = "[CLS] " + text + " [SEP]"
-					tokenized_text = tokenizer.tokenize(marked_text)
-					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-					segments_ids = [1] * len(tokenized_text)
-					tokens_tensor = torch.tensor([indexed_tokens])
-					segments_tensors = torch.tensor([segments_ids])
-					bert_model.eval()
-					with torch.no_grad():
-						encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
-						embedding = encoded_layers[11][0]
-						self.hypothesis.append(np.array(embedding.cpu()))
-						if(i%1000==0):
-							print(np.array(embedding.cpu()).shape)
+				# temp = self.hypothesis
+				# self.hypothesis = []
+				# i=0
+				# for text in temp:
+				# 	if(i%1000==0):
+				# 		print(text, "HYP")
+				# 	i = i+1
+				# 	marked_text = "[CLS] " + text + " [SEP]"
+				# 	tokenized_text = tokenizer.tokenize(marked_text)
+				# 	indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+				# 	segments_ids = [1] * len(tokenized_text)
+				# 	tokens_tensor = torch.tensor([indexed_tokens])
+				# 	segments_tensors = torch.tensor([segments_ids])
+				# 	bert_model.eval()
+				# 	with torch.no_grad():
+				# 		encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
+				# 		embedding = encoded_layers[11][0]
+				# 		self.hypothesis.append(np.array(embedding.cpu()))
+				# 		if(i%1000==0):
+				# 			print(np.array(embedding.cpu()).shape)
 
 				file = open('./pickle/sentences_train.dat', 'wb+')
 				pickle.dump((self.premise, self.hypothesis, self.label), file)
@@ -153,47 +154,47 @@ class SentenceDataset(Dataset):
 						if(len(sentence) > self.max_len):
 							self.max_len = len(sentence)
 
-				temp = self.premise_test
-				self.premise_test = []
-				i = 0
-				for text in temp:
-					if(i%1000==0):
-						print(text, "PREM")
-					i = i+1
-					marked_text = "[CLS] " + text + " [SEP]"
-					tokenized_text = tokenizer.tokenize(marked_text)
-					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-					segments_ids = [1] * len(tokenized_text)
-					tokens_tensor = torch.tensor([indexed_tokens])
-					segments_tensors = torch.tensor([segments_ids])
-					bert_model.eval()
-					with torch.no_grad():
-						encoded_layers, _ = bert_model(ttokens_tensor.to(device), segments_tensors.to(device))
-						embedding = encoded_layers[11][0]
-						self.premise_test.append(np.array(embedding.cpu()))
-						if(i%1000==0):
-							print(np.array(embedding.cpu()).shape)
+				# temp = self.premise_test
+				# self.premise_test = []
+				# i = 0
+				# for text in temp:
+				# 	if(i%1000==0):
+				# 		print(text, "PREM")
+				# 	i = i+1
+				# 	marked_text = "[CLS] " + text + " [SEP]"
+				# 	tokenized_text = tokenizer.tokenize(marked_text)
+				# 	indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+				# 	segments_ids = [1] * len(tokenized_text)
+				# 	tokens_tensor = torch.tensor([indexed_tokens])
+				# 	segments_tensors = torch.tensor([segments_ids])
+				# 	bert_model.eval()
+				# 	with torch.no_grad():
+				# 		encoded_layers, _ = bert_model(ttokens_tensor.to(device), segments_tensors.to(device))
+				# 		embedding = encoded_layers[11][0]
+				# 		self.premise_test.append(np.array(embedding.cpu()))
+				# 		if(i%1000==0):
+				# 			print(np.array(embedding.cpu()).shape)
 
-				temp = self.hypothesis_test
-				self.hypothesis_test = []
-				i = 0
-				for text in temp:
-					if(i%1000==0):
-						print(text, "HYP")
-					i = i+1
-					marked_text = "[CLS] " + text + " [SEP]"
-					tokenized_text = tokenizer.tokenize(marked_text)
-					indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-					segments_ids = [1] * len(tokenized_text)
-					tokens_tensor = torch.tensor([indexed_tokens])
-					segments_tensors = torch.tensor([segments_ids])
-					bert_model.eval()
-					with torch.no_grad():
-						encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
-						embedding = encoded_layers[11][0]
-						self.hypothesis_test.append(np.array(embedding.cpu()))
-						if(i%1000==0):
-							print(np.array(embedding.cpu()).shape)
+				# temp = self.hypothesis_test
+				# self.hypothesis_test = []
+				# i = 0
+				# for text in temp:
+				# 	if(i%1000==0):
+				# 		print(text, "HYP")
+				# 	i = i+1
+				# 	marked_text = "[CLS] " + text + " [SEP]"
+				# 	tokenized_text = tokenizer.tokenize(marked_text)
+				# 	indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+				# 	segments_ids = [1] * len(tokenized_text)
+				# 	tokens_tensor = torch.tensor([indexed_tokens])
+				# 	segments_tensors = torch.tensor([segments_ids])
+				# 	bert_model.eval()
+				# 	with torch.no_grad():
+				# 		encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
+				# 		embedding = encoded_layers[11][0]
+				# 		self.hypothesis_test.append(np.array(embedding.cpu()))
+				# 		if(i%1000==0):
+				# 			print(np.array(embedding.cpu()).shape)
 
 				file = open('./pickle/sentences_test.dat', 'wb+')
 				pickle.dump((self.premise_test, self.hypothesis_test, self.label_test), file)
@@ -226,15 +227,41 @@ class SentenceDataset(Dataset):
 
 	def __getitem__(self, idx):	
 		if(not self.test):
-			premise, hypothesis, label = torch.tensor(self.premise[idx]).type(torch.FloatTensor), torch.tensor(self.hypothesis[idx]).type(torch.FloatTensor), torch.tensor(self.label[idx]).type(torch.LongTensor)
+			premise, hypothesis, label = self.premise[idx], self.hypothesis[idx], self.label[idx] #torch.tensor(self.premise[idx]).type(torch.FloatTensor), torch.tensor(self.hypothesis[idx]).type(torch.FloatTensor), torch.tensor(self.label[idx]).type(torch.LongTensor)
 		else:
-			premise, hypothesis, label = torch.tensor(self.premise_test[idx]).type(torch.FloatTensor), torch.tensor(self.hypothesis_test[idx]).type(torch.FloatTensor), torch.tensor(self.label_test[idx]).type(torch.LongTensor)
-		premise = pad_tensor(premise, self.max_len, 0)
-		hypothesis = pad_tensor(hypothesis, self.max_len, 0)
+			premise, hypothesis, label = self.premise_test[idx], self.hypothesis_test[idx], self.label_test[idx]#torch.tensor(self.premise_test[idx]).type(torch.FloatTensor), torch.tensor(self.hypothesis_test[idx]).type(torch.FloatTensor), torch.tensor(self.label_test[idx]).type(torch.LongTensor)
+		marked_text = "[CLS] " + premise + " [SEP]"
+		tokenized_text = tokenizer.tokenize(marked_text)
+		indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+		segments_ids = [1] * len(tokenized_text)
+		tokens_tensor = torch.tensor([indexed_tokens])
+		segments_tensors = torch.tensor([segments_ids])
+		bert_model.eval()
+		with torch.no_grad():
+			encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
+			embedding = encoded_layers[11][0]
+			premise = np.array(embedding.cpu())
+		marked_text = "[CLS] " + hypothesis + " [SEP]"
+		tokenized_text = tokenizer.tokenize(marked_text)
+		indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+		segments_ids = [1] * len(tokenized_text)
+		tokens_tensor = torch.tensor([indexed_tokens])
+		segments_tensors = torch.tensor([segments_ids])
+		bert_model.eval()
+		with torch.no_grad():
+			encoded_layers, _ = bert_model(tokens_tensor.to(device), segments_tensors.to(device))
+			embedding = encoded_layers[11][0]
+			hypothesis = np.array(embedding.cpu())
+		premise = torch.tensor(premise).type(torch.FloatTensor)
+		hypothesis = torch.tensor(hypothesis).type(torch.FloatTensor)
+		label = torch.tensor(label).type(torch.LongTensor)
+		premise = pad_tensor(premise, int(1.5*self.max_len), 0)
+		hypothesis = pad_tensor(hypothesis, int(1.5*self.max_len), 0)
 		return premise, hypothesis, label
 
 
 
 if __name__ == '__main__':
-	SentenceDataset(load=True, test=False)
-	SentenceDataset(load=True, test=True)
+#	SentenceDataset(load=True, test=False)
+#	SentenceDataset(load=True, test=True)
+	pass

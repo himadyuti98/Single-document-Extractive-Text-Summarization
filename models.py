@@ -24,7 +24,7 @@ class SelfAttention(nn.Module):
 		self.batch_size = batch_size
 		self.hidden_size = hidden_size
 
-		self.bilstm = nn.LSTM(embedding_length, hidden_size, bidirectional=True)
+		self.bilstm = nn.LSTM(embedding_length, hidden_size, 2, dropout=0.2, bidirectional=True)
 		# We will use da = 350, r = 30 & penalization_coeff = 1 as per given in the self-attention original ICLR paper
 		self.W_s1 = nn.Linear(2*hidden_size, 350)
 		self.W_s2 = nn.Linear(350, 30)
@@ -70,11 +70,11 @@ class SelfAttention(nn.Module):
 		#input = self.word_embeddings(input_sentences)
 		input = input.permute(1, 0, 2)
 		if batch_size is None:
-			h_0 = Variable(torch.zeros(2, self.batch_size, self.hidden_size).cuda())
-			c_0 = Variable(torch.zeros(2, self.batch_size, self.hidden_size).cuda())
+			h_0 = Variable(torch.zeros(4, self.batch_size, self.hidden_size).cuda())
+			c_0 = Variable(torch.zeros(4, self.batch_size, self.hidden_size).cuda())
 		else:
-			h_0 = Variable(torch.zeros(2, batch_size, self.hidden_size).cuda())
-			c_0 = Variable(torch.zeros(2, batch_size, self.hidden_size).cuda())
+			h_0 = Variable(torch.zeros(4, batch_size, self.hidden_size).cuda())
+			c_0 = Variable(torch.zeros(4, batch_size, self.hidden_size).cuda())
 
 		output, (h_n, c_n) = self.bilstm(input, (h_0, c_0))
 		output = output.permute(1, 0, 2)
@@ -93,7 +93,7 @@ class SelfAttention(nn.Module):
 		return fc_out
 
 class LSTM1(nn.Module):
-	def __init__(self, batch_size=32, hidden_size=200, embedding_length=768, num_labels=3):
+	def __init__(self, batch_size=256, hidden_size=200, embedding_length=768, num_labels=3):
 		super(LSTM1, self).__init__()
 
 		self.premise_net = SelfAttention(batch_size, hidden_size, embedding_length)

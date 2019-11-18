@@ -10,12 +10,12 @@ import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 
 from models import *
-from dataset import *
+from dataset_bert import *
 
 parser = argparse.ArgumentParser(description='Experiment 1 Bert Embeddings')
 parser.add_argument('--lr', default=1e-4, type=float, help='learning rate') 
-parser.add_argument('--batch_size', default=16, type=int) 
-parser.add_argument('--epochs', '-e', type=int, default=200, help='Number of epochs to train.')
+parser.add_argument('--batch_size', default=256, type=int) 
+parser.add_argument('--epochs', '-e', type=int, default=100, help='Number of epochs to train.')
 parser.add_argument('--preparedata', type=int, default=1)
 
 args = parser.parse_args()
@@ -28,6 +28,7 @@ criterion = nn.CrossEntropyLoss()
 
 print('==> Creating networks..')
 lstm = LSTM1().to(device)
+lstm.load_state_dict(torch.load("./weights/networkbertlstm1_train.ckpt"))
 params = lstm.parameters()
 optimizer = optim.Adam(params, lr=args.lr, weight_decay=1e-5)
 
@@ -44,6 +45,8 @@ def train_lstm1(currepoch, epoch):
 
     for batch_idx in range(len(dataloader)):
         premise, hypothesis, label = next(dataloader)
+        if(batch_idx==len(dataloader)-1):
+            continue
         premise, hypothesis, label = premise.to(device), hypothesis.to(device), label.to(device)
         optimizer.zero_grad()
         y_pred = lstm(premise, hypothesis)
@@ -74,8 +77,7 @@ def train_lstm1(currepoch, epoch):
             f.write("{} {}".format(currepoch, batch_idx))
         print('Batch: [%d/%d], Loss: %.3f, Train Loss: %.3f , Acc: %.3f%% (%d/%d)' % (batch_idx, len(dataloader), loss.item(), train_loss/(batch_idx+1), 100.0*correct/total, correct, total), end='\r')
 
-    if(currepoch + 1 % 10 == 0):
-        torch.save(lstm.state_dict(), './checkpoints/networkbertlstm1_train_epoch_{}.ckpt'.format(currepoch + 1))
+    torch.save(lstm.state_dict(), './checkpoints/networkbertlstm1_train_epoch_{}.ckpt'.format(currepoch + 1))
     print('\n=> Classifier Network : Epoch [{}/{}], Loss:{:.4f}'.format(currepoch+1, epoch, train_loss / len(dataloader)))
 
 def test_lstm1(currepoch, epoch):
@@ -87,6 +89,8 @@ def test_lstm1(currepoch, epoch):
 
     for batch_idx in range(len(dataloader)):
         premise, hypothesis, label = next(dataloader)
+        if(batch_idx==len(dataloader)-1):
+            continue
         premise, hypothesis, label = premise.to(device), hypothesis.to(device), label.to(device)
         
         y_pred = lstm(premise, hypothesis)
