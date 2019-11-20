@@ -223,7 +223,10 @@ class SentenceDataset(Dataset):
 				file.close()	
 
 	def __len__(self):
-		return len(self.premise)
+		if(not self.test):
+			return len(self.premise)
+		else:
+			return len(self.premise_test)
 
 	def __getitem__(self, idx):	
 		if(not self.test):

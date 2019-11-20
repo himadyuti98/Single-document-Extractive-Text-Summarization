@@ -119,6 +119,6 @@ def test_lstm1(currepoch, epoch):
 
 print('==> Training starts..')
 for epoch in range(args.epochs):
-    train_lstm1(epoch, args.epochs)
     test_lstm1(epoch, args.epochs)
+    train_lstm1(epoch, args.epochs)
    
