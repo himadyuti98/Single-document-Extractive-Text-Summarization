@@ -1,7 +1,5 @@
 checkpoints
 data
-information
-logs
 pickle
 weights
 __pycache__
